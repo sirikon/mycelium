@@ -40,7 +40,7 @@ Deno.test("Container", async (t) => {
       assertThrows(
         () => container.resolve(ExampleClass),
         Error,
-        "Could not resolve class ExampleClass",
+        "Could not resolve class ExampleSingleton",
       );
     },
   );
@@ -58,7 +58,7 @@ Deno.test("Container", async (t) => {
       assertThrows(
         () => container.resolve(ExampleClass),
         Error,
-        "Could not resolve class ExampleClass",
+        "Could not resolve class ExampleContext",
       );
       const childContainer = container.createChild();
       childContainer.registerInstance(

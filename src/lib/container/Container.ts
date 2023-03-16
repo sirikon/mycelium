@@ -1,47 +1,66 @@
 import { Blueprint, Clazz } from "./models.ts";
-import { Registry } from "./Registry.ts";
-import { Resolver } from "./Resolver.ts";
-import { State } from "./State.ts";
 
 export class Container {
-  private registry: Registry;
-  private state: State;
-  private resolver: Resolver;
+  private parent: Container | null = null;
 
-  constructor() {
-    this.registry = new Registry();
-    this.state = new State();
-    this.resolver = new Resolver(this.registry, this.state);
-  }
+  private blueprints: Map<Clazz, Blueprint> = new Map();
+  private instances: Map<Clazz, unknown> = new Map();
 
   public register<T, TC extends Clazz<T>>(
     clazz: Blueprint<TC>["clazz"],
     dependencies: Blueprint<TC>["dependencies"],
   ) {
-    this.registry.addBlueprint({ clazz, dependencies });
+    if (this.blueprints.has(clazz)) {
+      throw new Error(`Class ${clazz.name} is already registered`);
+    }
+    this.blueprints.set(clazz, { clazz, dependencies });
   }
 
   public registerInstance<T, TC extends Clazz<T>>(clazz: TC, instance: T) {
-    this.state.addInstance(clazz, instance);
+    this.instances.set(clazz, instance);
   }
 
   public resolve<T>(clazz: Clazz<T>) {
-    const result = this.resolver.resolve(clazz);
+    const result = this.resolveInternal(clazz);
     if (result == null) {
       throw new Error(`Could not resolve class ${clazz.name}`);
     }
     return result;
   }
 
+  private resolveInternal<T>(clazz: Clazz<T>): T | null {
+    if (this.parent != null) {
+      const instance = this.parent.resolveInternal(clazz);
+      if (instance != null) return instance;
+    }
+
+    const instance = this.instances.get(clazz);
+    if (instance != null) return instance as T;
+
+    return this.createInstance(clazz);
+  }
+
+  private createInstance<T>(clazz: Clazz<T>) {
+    const blueprint = this.blueprints.get(clazz);
+    if (!blueprint) return null;
+
+    const dependenciesInstances: unknown[] = [];
+    for (const dependency of blueprint.dependencies) {
+      const instance = this.resolve(dependency);
+      if (instance == null) {
+        return null;
+      }
+      dependenciesInstances.push(this.resolve(dependency));
+    }
+
+    const instance = new blueprint.clazz(...dependenciesInstances);
+    this.instances.set(clazz, instance);
+    return instance;
+  }
+
   public createChild() {
     const container = new Container();
-    container.registry = new Registry();
-    container.state = new State();
-    container.resolver = new Resolver(
-      container.registry,
-      container.state,
-    );
-    container.resolver.parent = this.resolver;
+    container.parent = this;
     return container;
   }
 }
