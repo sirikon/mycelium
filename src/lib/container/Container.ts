@@ -31,31 +31,47 @@ export class Container {
   private resolveInternal<T>(clazz: Clazz<T>): T | null {
     if (this.parent != null) {
       const instance = this.parent.resolveInternal(clazz);
-      if (instance != null) return instance;
+      if (instance != null) {
+        return instance;
+      }
     }
 
     const instance = this.instances.get(clazz);
-    if (instance != null) return instance as T;
+    if (instance != null) {
+      return instance as T;
+    }
 
     return this.createInstance(clazz);
   }
 
   private createInstance<T>(clazz: Clazz<T>) {
-    const blueprint = this.blueprints.get(clazz);
-    if (!blueprint) return null;
+    const blueprint = this.getBlueprint(clazz);
+    if (!blueprint) {
+      return null;
+    }
 
     const dependenciesInstances: unknown[] = [];
     for (const dependency of blueprint.dependencies) {
-      const instance = this.resolve(dependency);
+      const instance = this.resolveInternal(dependency);
       if (instance == null) {
         return null;
       }
-      dependenciesInstances.push(this.resolve(dependency));
+      dependenciesInstances.push(instance);
     }
 
     const instance = new blueprint.clazz(...dependenciesInstances);
     this.instances.set(clazz, instance);
     return instance;
+  }
+
+  private getBlueprint<T>(clazz: Clazz<T>): Blueprint<Clazz<T>> | null {
+    if (this.parent != null) {
+      const blueprint = this.parent.getBlueprint(clazz);
+      if (blueprint != null) {
+        return blueprint;
+      }
+    }
+    return this.blueprints.get(clazz) || null;
   }
 
   public createChild() {
