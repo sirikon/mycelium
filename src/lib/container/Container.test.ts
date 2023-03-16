@@ -32,6 +32,7 @@ Deno.test("Container", async (t) => {
     () => {
       const container = new Container();
       container.register(ExampleClass, [
+        ExampleSingleton,
         ExampleCollaboratorA,
         ExampleCollaboratorB,
         ExampleCollaboratorB,
@@ -39,7 +40,7 @@ Deno.test("Container", async (t) => {
       assertThrows(
         () => container.resolve(ExampleClass),
         Error,
-        "Could not resolve class ExampleCollaboratorA",
+        "Could not resolve class ExampleClass",
       );
     },
   );
@@ -57,7 +58,7 @@ Deno.test("Container", async (t) => {
       assertThrows(
         () => container.resolve(ExampleClass),
         Error,
-        "Could not resolve class ExampleContext",
+        "Could not resolve class ExampleClass",
       );
       const childContainer = container.createChild();
       childContainer.registerInstance(
@@ -71,8 +72,12 @@ Deno.test("Container", async (t) => {
       assertThrows(
         () => container.resolve(ExampleClass),
         Error,
-        "Could not resolve class ExampleContext",
+        "Could not resolve class ExampleClass",
       );
+
+      const singletonB = childContainer.resolve(ExampleSingleton);
+      const singletonA = container.resolve(ExampleSingleton);
+      assertStrictEquals(singletonA, singletonB);
     },
   );
 
@@ -98,7 +103,9 @@ Deno.test("Container", async (t) => {
 
 function prepareContainer(args?: { includeContext?: boolean }) {
   const container = new Container();
+  container.register(ExampleSingleton, []);
   container.register(ExampleClass, [
+    ExampleSingleton,
     ExampleCollaboratorA,
     ExampleCollaboratorB,
     ExampleCollaboratorB,
@@ -116,12 +123,19 @@ function prepareContainer(args?: { includeContext?: boolean }) {
 
 class ExampleClass {
   constructor(
+    public singleton: ExampleSingleton,
     public a: ExampleCollaboratorA,
     public b1: ExampleCollaboratorB,
     public b2: ExampleCollaboratorB,
   ) {}
   saySomething() {
     return this.a.saySomethingA();
+  }
+}
+
+class ExampleSingleton {
+  doTheThing() {
+    return true;
   }
 }
 

@@ -3,7 +3,7 @@ import { Registry } from "./Registry.ts";
 import { State } from "./State.ts";
 
 export class Resolver {
-  private parent: Resolver | null = null;
+  public parent: Resolver | null = null;
 
   constructor(
     private registry: Registry,
@@ -30,7 +30,7 @@ export class Resolver {
     for (const dependency of blueprint.dependencies) {
       const instance = this.resolve(dependency);
       if (instance == null) {
-        throw new Error(`Could not resolve class ${dependency.name}`);
+        return null;
       }
       dependenciesInstances.push(this.resolve(dependency));
     }

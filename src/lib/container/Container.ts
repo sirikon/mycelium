@@ -35,9 +35,13 @@ export class Container {
 
   public createChild() {
     const container = new Container();
-    container.registry = this.registry;
+    container.registry = new Registry();
     container.state = new State();
-    container.resolver = new Resolver(this.registry, container.state);
+    container.resolver = new Resolver(
+      container.registry,
+      container.state,
+    );
+    container.resolver.parent = this.resolver;
     return container;
   }
 }
