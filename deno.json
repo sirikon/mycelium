@@ -3,6 +3,6 @@
     "test": "deno test"
   },
   "imports": {
-    "std/": "https://deno.land/std@0.179.0/"
+    "std/": "https://deno.land/std@0.180.0/"
   }
 }
