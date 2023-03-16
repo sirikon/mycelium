@@ -8,17 +8,11 @@ Deno.test("Container", async (t) => {
   });
 
   await t.step("classes can be registered", () => {
-    const container = new Container();
-    container.register(ExampleClass, [
-      ExampleCollaboratorA,
-    ]);
+    prepareContainer();
   });
 
   await t.step("classes can be registered and resolved", () => {
-    const container = new Container();
-    container.register(ExampleClass, [
-      ExampleCollaboratorA,
-    ]);
+    const container = prepareContainer();
     const instance = container.resolve(ExampleClass);
     assertInstanceOf(instance, ExampleClass);
   });
@@ -26,20 +20,24 @@ Deno.test("Container", async (t) => {
   await t.step(
     "classes can be resolved multiple times, always returning the same instance",
     () => {
-      const container = new Container();
-      container.register(ExampleClass, [
-        ExampleCollaboratorA,
-      ]);
+      const container = prepareContainer();
       const instanceA = container.resolve(ExampleClass);
       const instanceB = container.resolve(ExampleClass);
       assertInstanceOf(instanceA, ExampleClass);
       assertInstanceOf(instanceB, ExampleClass);
       assertStrictEquals(instanceA, instanceB);
-
       assertStrictEquals(instanceA.saySomething(), instanceB.saySomething());
     },
   );
 });
+
+function prepareContainer() {
+  const container = new Container();
+  container.register(ExampleClass, [
+    ExampleCollaboratorA,
+  ]);
+  return container;
+}
 
 class ExampleClass {
   constructor(
