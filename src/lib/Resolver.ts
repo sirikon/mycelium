@@ -1,44 +1,38 @@
-type Constructor<T = unknown> = new (...args: any) => T;
-type Provider<T = unknown> = (c: Resolver) => T;
+import { Clazz } from "./models.ts";
+import { Registry } from "./Registry.ts";
+import { State } from "./State.ts";
 
 export class Resolver {
   private parent: Resolver | null = null;
-  private providers: Map<Constructor, Provider> = new Map();
-  private instances: Map<Constructor, unknown> = new Map();
 
-  public resolve<T>(ctor: Constructor<T>) {
-    const instance = this.getInstance(ctor);
-    if (instance) return instance;
-    return this.createInstance(ctor);
-  }
+  constructor(
+    private registry: Registry,
+    private state: State,
+  ) {}
 
-  public createChildContainer() {
-    const child = new Resolver();
-    child.parent = this;
-    return child;
-  }
-
-  private createInstance<T>(ctor: Constructor<T>) {
-    const provider = this.getProvider(ctor);
-    if (!provider) {
-      throw new Error(`Constructor ${ctor.name} has not been registered`);
+  public resolve<T>(clazz: Clazz<T>): T | null {
+    if (this.parent != null) {
+      const instance = this.parent.resolve(clazz);
+      if (instance != null) return instance;
     }
-    const instance = provider(this);
-    this.instances.set(ctor, instance);
+
+    const instance = this.state.getInstance(clazz);
+    if (instance != null) return instance;
+
+    return this.createInstance(clazz);
+  }
+
+  private createInstance<T>(clazz: Clazz<T>) {
+    const blueprint = this.registry.getBlueprint(clazz);
+    if (!blueprint) return null;
+
+    const dependenciesInstances: unknown[] = [];
+    for (const dependency of blueprint.dependencies) {
+      dependenciesInstances.push(this.resolve(dependency));
+    }
+
+    const instance = new blueprint.clazz(...dependenciesInstances);
+    this.state.addInstance(clazz, instance);
     return instance;
-  }
-
-  private getInstance<T>(ctor: Constructor<T>): T | null {
-    if (this.instances.has(ctor)) {
-      return this.instances.get(ctor) as T;
-    }
-    return this.parent?.getInstance(ctor) || null;
-  }
-
-  private getProvider<T>(ctor: Constructor<T>): Provider<T> | null {
-    if (this.providers.has(ctor)) {
-      return this.providers.get(ctor) as Provider<T>;
-    }
-    return this.parent?.getProvider(ctor) || null;
   }
 }

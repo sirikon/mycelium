@@ -1,62 +1,18 @@
-type Clazz<T = any> = abstract new (...args: any) => T;
-
-export type Indices<T> = Exclude<keyof T, keyof any[]>;
-
-type Dependencies<T extends Clazz> =
-  & {
-    [P in Indices<ConstructorParameters<T>>]: Clazz<
-      ConstructorParameters<T>[P]
-    >;
-  }
-  & { length: ConstructorParameters<T>["length"] }
-  & any[];
-
-type Blueprint<
-  T extends Clazz = any,
-> = {
-  clazz: T;
-  dependencies: Dependencies<T>;
-};
-
-class DepA {
-  constructor(private peter: number) {}
-  // doThing() {}
-}
-class DepB {
-  constructor(private peter: number) {}
-}
-
-class Thingy {
-  constructor(private one: DepA, private two: DepB) {}
-}
-
-type Hey = Blueprint<typeof Thingy>;
+import { Blueprint, Clazz } from "./models.ts";
 
 export class Registry {
-  private registeredConstructors: Set<Clazz> = new Set();
-
   private blueprints: Map<Clazz, Blueprint> = new Map();
-  private instances: Map<Clazz, unknown> = new Map();
 
-  public register<T extends Clazz>(
-    clazz: T,
-    dependencies: Blueprint<T>["dependencies"],
-  ) {
-    // if (this.registeredConstructors.has(ctor)) {
-    //   throw new Error(`Constructor ${ctor.name} is already registered`);
-    // }
-    // this.providers.set(ctor, provider);
-    // this.registeredConstructors.add(ctor);
+  public addBlueprint<T extends Clazz>(blueprint: Blueprint<T>) {
+    if (this.blueprints.has(blueprint.clazz)) {
+      throw new Error(`Class ${blueprint.clazz.name} is already registered`);
+    }
+    this.blueprints.set(blueprint.clazz, blueprint);
   }
 
-  // public registerInstance<T>(ctor: Clazz<T>, instance: T) {
-  //   if (this.instances.has(ctor)) {
-  //     throw new Error(`Instance of ${ctor.name} already exists`);
-  //   }
-  //   this.instances.set(ctor, instance);
-  // }
+  public getBlueprint<T extends Clazz>(clazz: T) {
+    const blueprint = this.blueprints.get(clazz);
+    if (blueprint != null) return blueprint as Blueprint<T>;
+    return null;
+  }
 }
-
-const registry = new Registry();
-
-registry.register(Thingy, [DepB, DepB]);
