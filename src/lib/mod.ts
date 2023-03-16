@@ -1,5 +1,2 @@
-class Thingy {
-  constructor(private one: string, private two: number) {}
-}
-
-type Hey = ConstructorParameters<typeof Thingy>;
+export * from "./container/models.ts";
+export * from "./container/Container.ts";
