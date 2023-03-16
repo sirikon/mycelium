@@ -60,13 +60,14 @@ Deno.test("Container", async (t) => {
         Error,
         "Could not resolve class ExampleClass",
       );
-      const childContainer = container.createChild();
-      childContainer.registerInstance(
+
+      const childContainerA = container.createChild();
+      childContainerA.registerInstance(
         ExampleContext,
         new ExampleContext("another text"),
       );
       assertStrictEquals(
-        childContainer.resolve(ExampleClass).saySomething(),
+        childContainerA.resolve(ExampleClass).saySomething(),
         "another text",
       );
       assertThrows(
@@ -75,8 +76,21 @@ Deno.test("Container", async (t) => {
         "Could not resolve class ExampleClass",
       );
 
-      const singletonB = childContainer.resolve(ExampleSingleton);
-      const singletonA = container.resolve(ExampleSingleton);
+      const childContainerB = container.createChild();
+      childContainerB.registerInstance(
+        ExampleContext,
+        new ExampleContext("another text again"),
+      );
+      assertStrictEquals(
+        childContainerB.resolve(ExampleClass).saySomething(),
+        "another text again",
+      );
+
+      const singletonB = childContainerB.resolve(ExampleSingleton);
+      const singletonA = childContainerA.resolve(ExampleSingleton);
+      const singleton = container.resolve(ExampleSingleton);
+      assertStrictEquals(singleton, singletonA);
+      assertStrictEquals(singleton, singletonB);
       assertStrictEquals(singletonA, singletonB);
     },
   );
