@@ -28,6 +28,10 @@ export class Resolver {
 
     const dependenciesInstances: unknown[] = [];
     for (const dependency of blueprint.dependencies) {
+      const instance = this.resolve(dependency);
+      if (instance == null) {
+        throw new Error(`Could not resolve class ${dependency.name}`);
+      }
       dependenciesInstances.push(this.resolve(dependency));
     }
 

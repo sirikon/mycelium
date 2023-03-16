@@ -1,4 +1,7 @@
 {
+  "tasks": {
+    "test": "deno test"
+  },
   "imports": {
     "std/": "https://deno.land/std@0.179.0/"
   }

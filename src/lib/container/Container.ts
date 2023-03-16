@@ -21,7 +21,23 @@ export class Container {
     this.registry.addBlueprint({ clazz, dependencies });
   }
 
+  public registerInstance<T, TC extends Clazz<T>>(clazz: TC, instance: T) {
+    this.state.addInstance(clazz, instance);
+  }
+
   public resolve<T>(clazz: Clazz<T>) {
-    return this.resolver.resolve(clazz);
+    const result = this.resolver.resolve(clazz);
+    if (result == null) {
+      throw new Error(`Could not resolve class ${clazz.name}`);
+    }
+    return result;
+  }
+
+  public createChild() {
+    const container = new Container();
+    container.registry = this.registry;
+    container.state = new State();
+    container.resolver = new Resolver(this.registry, container.state);
+    return container;
   }
 }
